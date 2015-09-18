@@ -52,7 +52,7 @@ Configuration options:
 
 ---
 
-To start your Phoenix app:
+To start Numo:
 
   1. Install dependencies with `mix deps.get`
   2. Create and migrate your database with `mix ecto.create && mix ecto.migrate`
