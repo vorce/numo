@@ -1,3 +1,23 @@
-<div class="jumbotron">
-<a href="/messages">Latest unhandled messages</a>
-</div>
+<a href="/messages">Latest unhandled messages</a></li>
+
+<h2>Running consumers</h2>
+
+<table class="table">
+  <thead>
+    <tr>
+      <th>Module</th>
+      <th>PID</th>
+      <th>State</th>
+      </tr>
+  </thead>
+  <tbody>
+<%= for {m, pid, _, _} <- @consumers do %>
+  <% state = GenServer.call(pid, :state) %>
+    <tr>
+      <td><%= m %></td>
+      <td><%= inspect(pid) %></td>
+      <td><samp><%= inspect(state) %></samp></td>
+    </tr>
+<% end %>
+  </tbody>
+</table>

@@ -6,8 +6,8 @@ defmodule Numo do
   def start(_type, _args) do
     import Supervisor.Spec, warn: false
 
-    consumers = Application.get_env(:numo, Consumer.Json)[:consumers]
-      |> Enum.map(fn(c) -> worker(Consumer.Json, [c]) end)
+    consumers = Application.get_env(:numo, Consumers)[:consumers]
+      |> Enum.map(fn({m, cfg}) -> worker(m, [cfg]) end)
     
     children = [
       # Start the endpoint when the application starts
@@ -18,13 +18,9 @@ defmodule Numo do
       worker(ConCache, [[ttl_check: :timer.minutes(1),
                          ttl: :timer.minutes(30),
                          touch_on_read: true],
-                        [name: :consumer_cache]]),
-      
-      # worker(Numo.Worker, [arg1, arg2, arg3]),
+                        [name: :consumer_cache]]),  
     ] |> Enum.concat(consumers)
 
-    # See http://elixir-lang.org/docs/stable/elixir/Supervisor.html
-    # for other strategies and supported options
     opts = [strategy: :one_for_one, name: Numo.Supervisor]
     Supervisor.start_link(children, opts)
   end

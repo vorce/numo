@@ -18,10 +18,6 @@ defmodule Numo.Router do
 
     get "/", PageController, :index
     resources "/messages", MessageController
+    get "/_status", StatusController, :status
   end
-
-  # Other scopes may use custom stacks.
-  # scope "/api", Numo do
-  #   pipe_through :api
-  # end
 end

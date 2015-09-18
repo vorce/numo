@@ -24,12 +24,12 @@
 
   <li>
     <strong>Metadata:</strong>
-    <%= @message.metadata %>
+    <samp><%= @message.metadata %></samp>
   </li>
 
   <li>
     <strong>Payload:</strong>
-    <%= @message.payload %>
+    <samp><%= @message.payload %></samp>
   </li>
 </ul>
 

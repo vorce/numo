@@ -1,5 +1,6 @@
 defmodule Consumer.Json do
   require Logger
+
   use GenServer
   use AMQP
 
@@ -17,15 +18,9 @@ defmodule Consumer.Json do
     {:ok, conn} = Connection.open(args |> Map.get(:broker, "amqp://guest:guest@localhost"))
     {:ok, chan} = Channel.open(conn)
 
-    # Limit unacknowledged messages to 10
+    # Limit unacknowledged messages to 100
     Basic.qos(chan, prefetch_count: 100)
-    # Queue.declare(chan, @queue_error, durable: true)
-    # Messages that cannot be delivered to any consumer in the main queue will be routed to the error queue
-    #Queue.declare(chan, @queue, durable: true,
-    #                            arguments: [{"x-dead-letter-exchange", :longstr, ""},
-    #                                        {"x-dead-letter-routing-key", :longstr, @queue_error}])
-    #Exchange.fanout(chan, @exchange, durable: true)
-    #Queue.bind(chan, @queue, @exchange)
+
     # Register the GenServer process as a consumer
     {:ok, _consumer_tag} = Basic.consume(chan, args |> Map.get(:in_queue))
     {:ok, {chan, Map.put(args, :msg_count, 0)}}
@@ -38,7 +33,7 @@ defmodule Consumer.Json do
   end
 
   # Sent by the broker when the consumer is unexpectedly cancelled (such as after a queue deletion)
-  def handle_info({:basic_cancel, %{consumer_tag: consumer_tag}} = msg, state) do
+  def handle_info({:basic_cancel, msg}, state) do
     Logger.warn("Received unexpected cancel from broker: #{inspect msg}")
     {:stop, :normal, state}
   end
@@ -54,9 +49,9 @@ defmodule Consumer.Json do
     {:noreply, {channel, Map.put(args, :msg_count, Map.get(args, :msg_count, 0) + 1)}}
   end
 
-  #def handle_call(:msg_count, {from, ref}, {channel, args} = state) do
-  #  {:reply, Map.get(args, :msg_count, 0), state}
-  #end
+  def handle_call(:state, _from, {_channel, args} = state) do
+    {:reply, args, state}
+  end
 
   def handle_message(state, payload, metadata) do
     case deadlettered?(metadata |> Map.get(:headers, [])) do
@@ -74,54 +69,68 @@ defmodule Consumer.Json do
       {:ok, payload_struct} ->
         id = id_of(payload_struct, metadata)
         case seen?(id) do
-          true -> seen_message(id, state, payload, metadata)
+          true ->
+            seen_message(id, state, payload, metadata)
           false ->
             ConCache.put(:consumer_cache, id, true)
             out = Map.get(args, :out_exchange)
             routing_key = Map.get(metadata, :routing_key)
             options = metadata_to_options(metadata, id)
-            resend(channel, tag, routing_key, payload, out, options)
+            resend(channel, tag, routing_key, payload, out, options, Map.get(args, :out_throttle))
         end
     end
   end
 
   def save_message(id, reason, payload, metadata, error_code, queue) do
-    message_params = %{message_id: id,
-    error_code: error_code,
-    queue: queue,
-    reason: reason,
-    payload: payload,
-    metadata: inspect(metadata)}
-    
+    message_params = %{
+      message_id: id,
+      error_code: error_code,
+      queue: queue,
+      reason: reason,
+      payload: payload,
+      metadata: inspect(metadata)}
+
     changeset = Numo.Message.changeset(%Numo.Message{}, message_params)
     {:ok, m} = Numo.Repo.insert(changeset)
     Logger.info("Saved message: messages/#{m.id}")
   end
   
-  defp unknown_message({channel, args} = state, payload, %{delivery_tag: tag} = metadata) do
-    Logger.debug("Saving message that came from an unexpected source.")
+  defp unknown_message({channel, args}, payload, %{delivery_tag: tag} = metadata) do
+    Logger.debug("Handling message that came from an unexpected source.")
     save_message("unknown", "Unknown origin", payload, metadata, @unknown_origin_code, Map.get(args, :in_queue))
     Basic.ack(channel, tag)
   end
 
-  defp seen_message(id, {channel, args} = state, payload, %{delivery_tag: tag} = metadata) do
-    Logger.debug("Saving message that have been seen before. Id: #{id}")
+  defp seen_message(id, {channel, args}, payload, %{delivery_tag: tag} = metadata) do
+    Logger.debug("Handling message that have been seen before. Id: #{id}")
     save_message(id, "Failed to be processed multiple times", payload, metadata, @multiple_failures_code, Map.get(args, :in_queue))
     ConCache.delete(:consumer_cache, id)
     Basic.ack(channel, tag) 
   end
 
-  defp invalid_message({channel, args} = state, payload, %{delivery_tag: tag} = metadata) do
-    Logger.debug("Saving non-json message.")
+  defp invalid_message({channel, args}, payload, %{delivery_tag: tag} = metadata) do
+    Logger.debug("Handling non-json message.")
     save_message("undefined", "Invalid Json", payload, metadata, @invalid_json_code, Map.get(args, :in_queue))   
     Basic.ack(channel, tag)
   end
 
-  defp resend(channel, tag, routing_key, payload, to, options) do
-    # TODO throttle!
+  defp resend(channel, tag, routing_key, payload, to, options, throttle) do
+    throttle(channel, throttle)
     Logger.debug("Resending message: #{inspect %{:out_exchange => to, :routing_key => routing_key, :options => options}}")
     Basic.publish(channel, to, routing_key, payload, options)
     Basic.ack(channel, tag)
+  end
+
+  def throttle(_, nil) do
+  end
+  def throttle(channel, {queue, size}) do
+    {:ok, %{message_count: messages, consumer_count: consumers}} = AMQP.Queue.declare(channel, queue, [passive: true])
+    cond do
+      messages >= size ->
+        :timer.sleep(500) 
+        throttle(channel, {queue, size})
+      :else -> :ok
+    end
   end
 
   defp seen?(id) do
@@ -158,6 +167,6 @@ defmodule Consumer.Json do
 
   def now() do
     {mega,sec,micro} = :erlang.now()
-    (mega*1000000+sec)*1000000+micro
+    (mega * 1000000 + sec) * 1000000 + micro
   end
 end

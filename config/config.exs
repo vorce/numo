@@ -14,10 +14,13 @@ config :numo, Numo.Endpoint,
   pubsub: [name: Numo.PubSub,
            adapter: Phoenix.PubSub.PG2]
 
-config :numo, Consumer.Json,
-  consumers: [%{broker: "amqp://guest:guest@192.168.99.100",
-                in_queue: "numo",
-                out_exchange: "out"}]
+# Configures the Consumers
+config :numo, Consumers,
+  consumers: [{Consumer.Json,
+                %{broker: "amqp://guest:guest@192.168.99.100",
+                  in_queue: "numo",
+                  out_exchange: "out",
+                  out_throttle: {"output", 50000}}}]
            
 # Configures Elixir's Logger
 config :logger, :console,
