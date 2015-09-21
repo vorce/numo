@@ -23,7 +23,7 @@ config :numo, Consumers,
                   out_throttle: {"output", 50000}}}]
 
 config :numo, ConCache,
-  ttl: :timer.minutes(30)
+  ttl: :timer.minutes(30),
   ttl_check: :timer.minutes(1)
 
 # Configures Elixir's Logger
