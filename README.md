@@ -23,8 +23,6 @@ Other messages are saved to a database. Messages can be saved for the following 
 - not a deadlettered message
 - a message that has been previously sent to the out exchange but ended up in the numo queue again
 
-the [`/messages`](http://localhost:4000/messages) endpoint will show the latest saved messages.
-
 Some assumptions:
 
 - The json contains an "id" field in its root OR
@@ -42,12 +40,17 @@ Configuration options:
 - TODO: Max size of cache
 - TODO: TTL of cache entries. Currently 30 min
 
+
+#### Web UI
+
+[`localhost:4000`](http://localhost:4000) will list all running Json consumers.
+The [`/messages`](http://localhost:4000/messages) endpoint will show the latest saved messages.
+
 ## Misc TODOs
 
 - Build a docker image
 - Tests
 - Pluggable identification of messages
-- Websockets for live updates
 - Resend button
 
 ---
