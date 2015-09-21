@@ -19,3 +19,22 @@ import "deps/phoenix_html/web/static/js/phoenix_html"
 // paths "./socket" or full ones "web/static/js/socket".
 
 // import socket from "./socket"
+
+import {Socket} from "deps/phoenix/web/static/js/phoenix"
+
+let messagesContainer = $("#messages")
+let consumersTable = $("#consumers")
+
+let socket = new Socket("/socket")
+socket.connect()
+let chan = socket.channel("consumer:all", {})
+
+chan.on("msg_count", payload => {
+  console.log(Date() + " Message count. " + payload.from + ": " + payload.count);
+  let count_destination = $("#" + payload.from + "_count") ;
+  count_destination.html(`${payload.count}`);
+})
+
+chan.join().receive("ok", chan => {
+  console.log("Consumer channel")
+})

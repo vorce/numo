@@ -3,6 +3,7 @@ defmodule Numo.UserSocket do
 
   ## Channels
   # channel "rooms:*", Numo.RoomChannel
+  channel "consumer:*", Numo.ConsumerChannel
 
   ## Transports
   transport :websocket, Phoenix.Transports.WebSocket

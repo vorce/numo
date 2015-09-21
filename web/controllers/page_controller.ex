@@ -3,7 +3,7 @@ defmodule Numo.PageController do
 
   def index(conn, _params) do
     consumers = Supervisor.which_children(Numo.Supervisor)
-      |> Enum.filter(fn({m, pid, _, _}) -> m == Consumer.Json end)
+      |> Enum.filter(fn({m, _, _, _}) -> m == Consumer.Json end)
     render(conn, "index.html", consumers: consumers)
   end
 end

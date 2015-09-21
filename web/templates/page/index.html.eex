@@ -5,18 +5,22 @@
 <table class="table">
   <thead>
     <tr>
+      <th>Queue</th>
+      <th>Messages</th>
       <th>Module</th>
       <th>PID</th>
-      <th>State</th>
+      <th>Config</th>
       </tr>
   </thead>
-  <tbody>
+  <tbody id="consumers">
 <%= for {m, pid, _, _} <- @consumers do %>
   <% state = GenServer.call(pid, :state) %>
-    <tr>
+    <tr id="<%= state.in_queue %>">
+      <td><%= state.in_queue %></td>
+      <td id="<%= state.in_queue <> "_count" %>"><%= state.msg_count %></td>
       <td><%= m %></td>
       <td><%= inspect(pid) %></td>
-      <td><samp><%= inspect(state) %></samp></td>
+      <td><samp><%= inspect(state |> Dict.take([:broker, :in_queue, :out_exchange, :out_throttle])) %></samp></td>
     </tr>
 <% end %>
   </tbody>

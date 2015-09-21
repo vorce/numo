@@ -45,8 +45,12 @@ defmodule Consumer.Json do
   end
 
   def handle_info({:basic_deliver, payload, metadata}, {channel, args} = state) do
+    new_count = args.msg_count + 1
+    Numo.Endpoint.broadcast!("consumer:all", "msg_count",
+      %{"count"=> new_count, "from"=> args.in_queue})
+
     spawn fn -> handle_message(state, payload, metadata) end
-    {:noreply, {channel, Map.put(args, :msg_count, Map.get(args, :msg_count, 0) + 1)}}
+    {:noreply, {channel, Map.put(args, :msg_count, new_count)}}
   end
 
   def handle_call(:state, _from, {_channel, args} = state) do
@@ -67,7 +71,7 @@ defmodule Consumer.Json do
       {:error, _} -> 
         invalid_message(state, payload, metadata)
       {:ok, payload_struct} ->
-        id = id_of(payload_struct, metadata)
+        id = id_of(payload_struct, metadata) |> to_string
         case seen?(id) do
           true ->
             seen_message(id, state, payload, metadata)
@@ -124,7 +128,8 @@ defmodule Consumer.Json do
   def throttle(_, nil) do
   end
   def throttle(channel, {queue, size}) do
-    {:ok, %{message_count: messages, consumer_count: consumers}} = AMQP.Queue.declare(channel, queue, [passive: true])
+    {:ok, %{message_count: messages, consumer_count: _consumers}} = AMQP.Queue.declare(channel, queue, [passive: true])
+    Logger.debug("Throttle. Queue #{queue} size: #{messages}, needs to be <= #{size}")
     cond do
       messages >= size ->
         :timer.sleep(500) 
@@ -167,6 +172,7 @@ defmodule Consumer.Json do
 
   def now() do
     {mega,sec,micro} = :erlang.now()
+    #mega * 1000000 + sec
     (mega * 1000000 + sec) * 1000000 + micro
   end
 end
