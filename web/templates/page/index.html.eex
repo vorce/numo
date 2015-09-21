@@ -7,7 +7,7 @@
     <tr>
       <th>Queue</th>
       <th>Messages</th>
-      <th>Module</th>
+      <th>Name</th>
       <th>PID</th>
       <th>Config</th>
       </tr>

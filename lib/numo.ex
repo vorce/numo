@@ -7,7 +7,8 @@ defmodule Numo do
     import Supervisor.Spec, warn: false
 
     consumers = Application.get_env(:numo, Consumers)[:consumers]
-      |> Enum.map(fn({m, cfg}) -> worker(m, [cfg]) end)
+      |> Enum.with_index
+      |> Enum.map(fn({{m, cfg}, i}) -> worker(m, [cfg], id: "#{m}:#{i}") end)
     
     children = [
       # Start the endpoint when the application starts
