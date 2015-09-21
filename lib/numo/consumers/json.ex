@@ -96,7 +96,7 @@ defmodule Consumer.Json do
 
     changeset = Numo.Message.changeset(%Numo.Message{}, message_params)
     {:ok, m} = Numo.Repo.insert(changeset)
-    Logger.info("Saved message: messages/#{m.id}")
+    Logger.info("Saved message: /messages/#{m.id}")
   end
   
   defp unknown_message({channel, args}, payload, %{delivery_tag: tag} = metadata) do

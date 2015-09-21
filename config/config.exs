@@ -21,7 +21,11 @@ config :numo, Consumers,
                   in_queue: "numo",
                   out_exchange: "out",
                   out_throttle: {"output", 50000}}}]
-           
+
+config :numo, ConCache,
+  ttl: :timer.minutes(30)
+  ttl_check: :timer.minutes(1)
+
 # Configures Elixir's Logger
 config :logger, :console,
   format: "$time $metadata[$level] $message\n",

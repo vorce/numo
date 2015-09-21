@@ -38,7 +38,7 @@ Configuration options:
 - Throttle of resends (checks the size of given queue, and doesn't send if the size > specified number)
 - TODO: Number of times to re-send/queue a message before handling it. Currently 1
 - TODO: Max size of cache
-- TODO: TTL of cache entries. Currently 30 min
+- TTL of cache entries. Default is 30min (ttl check default 1min). This is global for all json consumers.
 
 
 #### Web UI

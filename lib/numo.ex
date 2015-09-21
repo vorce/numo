@@ -16,8 +16,8 @@ defmodule Numo do
       # Start the Ecto repository
       worker(Numo.Repo, []),
 
-      worker(ConCache, [[ttl_check: :timer.minutes(1),
-                         ttl: :timer.minutes(30),
+      worker(ConCache, [[ttl_check: Application.get_env(:numo, ConCache).ttl_check,
+                         ttl: Application.get_env(:numo, ConCache).ttl,
                          touch_on_read: true],
                         [name: :consumer_cache]]),  
     ] |> Enum.concat(consumers)
