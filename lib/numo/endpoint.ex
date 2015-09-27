@@ -3,6 +3,8 @@ defmodule Numo.Endpoint do
 
   socket "/socket", Numo.UserSocket
 
+  plug Beaker.Integrations.Phoenix
+
   # Serve at "/" the static files from "priv/static" directory.
   #
   # You should set gzip to true if you are running phoenix.digest

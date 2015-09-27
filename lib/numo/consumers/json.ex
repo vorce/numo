@@ -47,7 +47,8 @@ defmodule Consumer.Json do
   def handle_info({:basic_deliver, payload, metadata}, {channel, args} = state) do
     new_count = args.msg_count + 1
     Numo.Endpoint.broadcast!("consumer:all", "msg_count",
-      %{"count"=> new_count, "from"=> args.in_queue})
+      %{"count" => new_count, "from" => args.in_queue})
+    Beaker.Counter.incr("Numo:#{args.in_queue}:Messages")
 
     spawn fn -> handle_message(state, payload, metadata) end
     {:noreply, {channel, Map.put(args, :msg_count, new_count)}}
@@ -94,9 +95,12 @@ defmodule Consumer.Json do
       payload: payload,
       metadata: inspect(metadata)}
 
+    IO.inspect message_params
     changeset = Numo.Message.changeset(%Numo.Message{}, message_params)
+    IO.inspect changeset
     {:ok, m} = Numo.Repo.insert(changeset)
     Logger.info("Saved message: /messages/#{m.id}")
+    Beaker.Counter.incr("Numo:Saved")
   end
   
   defp unknown_message({channel, args}, payload, %{delivery_tag: tag} = metadata) do
@@ -123,6 +127,7 @@ defmodule Consumer.Json do
     Logger.debug("Resending message: #{inspect %{:out_exchange => to, :routing_key => routing_key, :options => options}}")
     Basic.publish(channel, to, routing_key, payload, options)
     Basic.ack(channel, tag)
+    Beaker.Counter.incr("Numo:#{to}:Resent")
   end
 
   def throttle(_, nil) do

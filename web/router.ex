@@ -20,4 +20,6 @@ defmodule Numo.Router do
     resources "/messages", MessageController
     get "/_status", StatusController, :status
   end
+
+  forward "/metrics", Beaker.Web
 end

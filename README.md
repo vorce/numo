@@ -43,8 +43,9 @@ Configuration options:
 
 #### Web UI
 
-[`localhost:4000`](http://localhost:4000) will list all running Json consumers.
-The [`/messages`](http://localhost:4000/messages) endpoint will show the latest saved messages.
+- [`localhost:4000`](http://localhost:4000) will list all running Json consumers.
+- The [`/messages`](http://localhost:4000/messages) endpoint will show the latest saved messages.
+- On [`/metrics`](http://localhost:4000/metrics) there are som live updated metrics using [Beaker](https://github.com/hahuang65/beaker)
 
 ## Misc TODOs
 

@@ -18,7 +18,8 @@ defmodule Numo.Mixfile do
   def application do
     [mod: {Numo, []},
      applications: [:phoenix, :phoenix_html, :cowboy, :logger,
-                    :phoenix_ecto, :postgrex, :amqp, :con_cache]]
+                    :phoenix_ecto, :postgrex, :amqp, :con_cache,
+                    :beaker]]
   end
 
   # Specifies which paths to compile per environment
@@ -36,6 +37,7 @@ defmodule Numo.Mixfile do
      {:phoenix_live_reload, "~> 1.0", only: :dev},
      {:cowboy, "~> 1.0"},
      {:amqp, "0.1.2"},
-     {:con_cache, "~> 0.9.0"}]
+     {:con_cache, "~> 0.9.0"},
+     {:beaker, ">= 1.1.1"}]
   end
 end
