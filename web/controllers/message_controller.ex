@@ -7,7 +7,11 @@ defmodule Numo.MessageController do
   plug :scrub_params, "message" when action in [:create, :update]
 
   def index(conn, _params) do
-    messages = Message |> order_by([p], [desc: p.inserted_at]) |> Repo.all |> Enum.take 100
+    messages =
+      Message
+      |> order_by([p], [desc: p.inserted_at])
+      |> Repo.all # TODO don't use all
+      |> Enum.take 100
     render(conn, "index.html", messages: messages)
   end
 
