@@ -16,7 +16,7 @@
 <%= for {m, pid, _, _} <- @consumers do %>
   <% state = GenServer.call(pid, :state) %>
     <tr id="<%= state.in_queue %>">
-      <td><%= state.in_queue %></td>
+      <td><%= link state.in_queue, to: message_path(@conn, :queue, state.in_queue) %></td>
       <td id="<%= state.in_queue <> "_count" %>"><%= state.msg_count %></td>
       <td><%= m %></td>
       <td><%= inspect(pid) %></td>

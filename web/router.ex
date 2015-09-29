@@ -18,6 +18,7 @@ defmodule Numo.Router do
 
     get "/", PageController, :index
     resources "/messages", MessageController
+    get "/queue/:name", MessageController, :queue
     get "/_status", StatusController, :status
   end
 

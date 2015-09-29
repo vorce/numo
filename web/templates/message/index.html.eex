@@ -1,4 +1,4 @@
-<h2>Latest 100 messages</h2>
+<h2>Latest 1000 unhandled messages from: <%= @queue %></h2>
 
 <table class="table">
   <thead>
@@ -30,4 +30,4 @@
   </tbody>
 </table>
 
-<%= link "New message", to: message_path(@conn, :new) %>
+<!-- <%= link "New message", to: message_path(@conn, :new) %> -->

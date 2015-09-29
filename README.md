@@ -45,6 +45,7 @@ Configuration options:
 
 - [`localhost:4000`](http://localhost:4000) will list all running Json consumers.
 - The [`/messages`](http://localhost:4000/messages) endpoint will show the latest saved messages.
+- [`/queue/myqueue`] shows the 1000 latest unhandled messages for that specific queue
 - On [`/metrics`](http://localhost:4000/metrics) there are som live updated metrics using [Beaker](https://github.com/hahuang65/beaker)
 - [`/_status`](http://localhost:4000/_status) is meant to be used whenever you want to check to see if the service is up and running or not
 

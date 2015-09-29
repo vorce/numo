@@ -7,12 +7,26 @@ defmodule Numo.MessageController do
   plug :scrub_params, "message" when action in [:create, :update]
 
   def index(conn, _params) do
+    query = from m in Message,
+      order_by: [desc: m.inserted_at],
+      limit: 1000
+      
     messages =
-      Message
-      |> order_by([p], [desc: p.inserted_at])
+      query
       |> Repo.all # TODO don't use all
-      |> Enum.take 100
-    render(conn, "index.html", messages: messages)
+    render(conn, "index.html", [messages: messages, queue: "all"])
+  end
+
+  def queue(conn, %{"name" => queue}) do
+    query = from m in Message,
+      where: m.queue == ^queue,
+      order_by: [desc: m.inserted_at],
+      limit: 1000
+
+    messages =
+      query
+      |> Repo.all
+    render(conn, "index.html", [messages: messages, queue: queue])
   end
 
   def new(conn, _params) do
