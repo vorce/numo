@@ -34,4 +34,4 @@
 </ul>
 
 <!-- <%= link "Edit", to: message_path(@conn, :edit, @message) %> -->
-<%= link "Back", to: message_path(@conn, :index) %>
+<%= link "Back", to: message_path(@conn, :queue, @message.queue) %>

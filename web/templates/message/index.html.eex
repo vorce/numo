@@ -1,4 +1,4 @@
-<h2>Latest 1000 unhandled messages from: <%= @queue %></h2>
+<h2>Latest 1000 unhandled messages from: <samp><%= @queue %></samp></h2>
 
 <table class="table">
   <thead>
