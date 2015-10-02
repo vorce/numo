@@ -16,14 +16,15 @@ defmodule Consumer.Json do
     Logger.info("Setting up #{__MODULE__} with settings: #{inspect args}")
 
     {:ok, conn} = Connection.open(args |> Map.get(:broker, "amqp://guest:guest@localhost"))
-    {:ok, chan} = Channel.open(conn)
+    {:ok, chan_in} = Channel.open(conn)
+    {:ok, chan_out} = Channel.open(conn)
 
     # Limit unacknowledged messages to 100
-    Basic.qos(chan, prefetch_count: 100)
+    Basic.qos(chan_in, prefetch_count: 100)
 
     # Register the GenServer process as a consumer
-    {:ok, _consumer_tag} = Basic.consume(chan, args |> Map.get(:in_queue))
-    {:ok, {chan, Map.put(args, :msg_count, 0)}}
+    {:ok, _consumer_tag} = Basic.consume(chan_in, args |> Map.get(:in_queue))
+    {:ok, {chan_in, chan_out, Map.put(args, :msg_count, 0)}}
   end
 
   # Confirmation sent by the broker after registering this process as a consumer
@@ -44,17 +45,17 @@ defmodule Consumer.Json do
     {:noreply, state}
   end
 
-  def handle_info({:basic_deliver, payload, metadata}, {channel, args} = state) do
+  def handle_info({:basic_deliver, payload, metadata}, {chan_in, chan_out, args} = state) do
     new_count = args.msg_count + 1
     Numo.Endpoint.broadcast!("consumer:all", "msg_count",
       %{"count" => new_count, "from" => args.in_queue})
     Beaker.Counter.incr("Numo:#{args.in_queue}:Messages")
 
     spawn fn -> handle_message(state, payload, metadata) end
-    {:noreply, {channel, Map.put(args, :msg_count, new_count)}}
+    {:noreply, {chan_in, chan_out, Map.put(args, :msg_count, new_count)}}
   end
 
-  def handle_call(:state, _from, {_channel, args} = state) do
+  def handle_call(:state, _from, {_in, _out, args} = state) do
     {:reply, args, state}
   end
 
@@ -67,7 +68,7 @@ defmodule Consumer.Json do
     end
   end
 
-  defp deadlettered_message({channel, args} = state, payload, %{delivery_tag: tag} = metadata) do
+  defp deadlettered_message({_in, chan_out, args} = state, payload, %{delivery_tag: tag} = metadata) do
     case Poison.Parser.parse(payload) do
       {:error, _} -> 
         invalid_message(state, payload, metadata)
@@ -81,7 +82,7 @@ defmodule Consumer.Json do
             out = Map.get(args, :out_exchange)
             routing_key = Map.get(metadata, :routing_key)
             options = metadata_to_options(metadata, id)
-            resend(channel, tag, routing_key, payload, out, options, Map.get(args, :out_throttle))
+            resend(chan_out, tag, routing_key, payload, out, options, Map.get(args, :out_throttle))
         end
     end
   end
@@ -95,31 +96,29 @@ defmodule Consumer.Json do
       payload: payload,
       metadata: inspect(metadata)}
 
-    IO.inspect message_params
     changeset = Numo.Message.changeset(%Numo.Message{}, message_params)
-    IO.inspect changeset
     {:ok, m} = Numo.Repo.insert(changeset)
     Logger.info("Saved message: /messages/#{m.id}")
     Beaker.Counter.incr("Numo:Saved")
   end
   
-  defp unknown_message({channel, args}, payload, %{delivery_tag: tag} = metadata) do
+  defp unknown_message({chan_in, _out, args}, payload, %{delivery_tag: tag} = metadata) do
     Logger.debug("Handling message that came from an unexpected source.")
     save_message("unknown", "Unknown origin", payload, metadata, @unknown_origin_code, Map.get(args, :in_queue))
-    Basic.ack(channel, tag)
+    Basic.ack(chan_in, tag)
   end
 
-  defp seen_message(id, {channel, args}, payload, %{delivery_tag: tag} = metadata) do
+  defp seen_message(id, {chan_in, _out, args}, payload, %{delivery_tag: tag} = metadata) do
     Logger.debug("Handling message that have been seen before. Id: #{id}")
     save_message(id, "Failed to be processed multiple times", payload, metadata, @multiple_failures_code, Map.get(args, :in_queue))
     ConCache.delete(:consumer_cache, id)
-    Basic.ack(channel, tag) 
+    Basic.ack(chan_in, tag) 
   end
 
-  defp invalid_message({channel, args}, payload, %{delivery_tag: tag} = metadata) do
+  defp invalid_message({chan_in, _out, args}, payload, %{delivery_tag: tag} = metadata) do
     Logger.debug("Handling non-json message.")
     save_message("undefined", "Invalid Json", payload, metadata, @invalid_json_code, Map.get(args, :in_queue))   
-    Basic.ack(channel, tag)
+    Basic.ack(chan_in, tag)
   end
 
   defp resend(channel, tag, routing_key, payload, to, options, throttle) do

@@ -56,7 +56,6 @@ Configuration options:
 - Pluggable identification of messages
 - Resend button
 - A way to skip resend (special header?)
-- Metrics
 - Health and config endpoints
 
 ---
