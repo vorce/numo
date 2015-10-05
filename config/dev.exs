@@ -38,5 +38,5 @@ config :numo, Numo.Repo,
   username: "postgres",
   password: "postgres",
   database: "numo_dev",
-  hostname: System.get_env("DOCKER_HOST") |> URI.parse |> Map.get(:host, "localhost"),
+  hostname: "192.168.99.100",
   pool_size: 10
