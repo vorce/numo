@@ -58,6 +58,14 @@ Configuration options:
 - A way to skip resend (special header?)
 - Health and config endpoints
 
+## Docker
+
+There is a Dockerfile included, it is however based on an internal centos image.
+
+Build: `docker build .`
+
+Run: `docker run -i -e DATABASE_URL="ecto://postgres:postgres@192.168.99.100/numo_dev" -e PORT=4000 -p "4000:4000" -d <hash>`
+
 ---
 
 To start Numo:
