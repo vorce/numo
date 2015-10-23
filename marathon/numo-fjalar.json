@@ -1,0 +1,45 @@
+{
+  "id": "/misc/numo",
+  "container": {
+    "type": "DOCKER",
+    "docker": {
+      "image": "docker.meltwater.com/numo:latest",
+      "forcePullImage": true,
+      "network": "BRIDGE",
+      "portMappings": [
+        {
+          "containerPort": 4000, "servicePort":8444
+        }
+      ],
+      "parameters": [
+        {
+          "key": "interactive",
+          "value": "true"
+        }
+      ]
+    }
+  },
+  "instances": 1,
+  "cpus": 0.5,
+  "mem": 500.0,
+  "uris": [
+    "/root/.dockercfg"
+  ],
+  "env":{
+    "DATABASE_URL":"ecto://postgres:postgres@mag-lab30/numo_dev"
+  },
+  "upgradeStrategy": {
+    "minimumHealthCapacity": 0.0
+  },
+  "healthChecks": [
+    {
+      "protocol": "HTTP",
+      "portIndex": 0,
+      "path": "/_status",
+      "gracePeriodSeconds": 60,
+      "intervalSeconds": 150,
+      "timeoutSeconds": 30,
+      "maxConsecutiveFailures": 3
+    }
+  ]
+}
