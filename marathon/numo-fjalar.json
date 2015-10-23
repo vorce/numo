@@ -26,6 +26,7 @@
     "/root/.dockercfg"
   ],
   "env":{
+    "PORT":4000,
     "DATABASE_URL":"ecto://postgres:postgres@mag-lab30/numo_dev"
   },
   "upgradeStrategy": {
