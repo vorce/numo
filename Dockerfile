@@ -28,7 +28,10 @@ WORKDIR /service
 RUN mix local.rebar
 RUN mix local.hex --force
 RUN yes | mix deps.get --only prod
-RUN MIX_ENV=prod mix compile
+RUN yes | MIX_ENV=prod mix compile
+
+# For installing brunch dependencies
+RUN npm install
 
 RUN brunch build --production
 RUN MIX_ENV=prod mix phoenix.digest
